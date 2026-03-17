@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platzwart.Auth;
 using Platzwart.Data;
+using Platzwart.Middleware;
 using Platzwart.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,5 +30,14 @@ using (var scope = app.Services.CreateScope())
         await db.SaveChangesAsync();
     }
 }
+
+// Middleware pipeline
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RateLimitMiddleware>();
+app.UseMiddleware<CsrfMiddleware>();
+app.UseMiddleware<SessionMiddleware>();
+
+// Map API endpoints
+app.MapAuthEndpoints();
 
 app.Run();
