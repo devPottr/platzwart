@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useShellStore } from '../../stores/shellStore'
 import { addDays, formatShortDate, getKW, isWeekend, getMonday, toLocalISO } from '../../utils/date'
-import { FieldStatusStrip } from '../field/FieldStatusStrip'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { Field, Booking } from '../../types'
 
@@ -172,7 +171,6 @@ export function WeeklyTimeline({
   const weekStart = useShellStore((s) => s.weekStart)
   const setWeekStart = useShellStore((s) => s.setWeekStart)
   const setRightPanel = useShellStore((s) => s.setRightPanel)
-  const fieldStripVisible = useShellStore((s) => s.fieldStripVisible)
   const activeFieldFilter = useShellStore((s) => s.activeFieldFilter)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
@@ -405,11 +403,6 @@ export function WeeklyTimeline({
             </button>
           ))}
         </div>
-      )}
-
-      {/* Field Status Strip */}
-      {fieldStripVisible && fields.length > 0 && (
-        <FieldStatusStrip fields={fields} allBookings={allBookings} />
       )}
 
       {/* Timeline Grid */}

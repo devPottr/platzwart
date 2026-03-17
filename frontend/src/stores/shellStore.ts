@@ -28,8 +28,6 @@ interface ShellState {
   setWeekStart: (date: string) => void
   theme: 'dark' | 'light'
   toggleTheme: () => void
-  fieldStripVisible: boolean
-  toggleFieldStrip: () => void
   activeFieldFilter: number | null
   setActiveFieldFilter: (id: number | null) => void
 }
@@ -74,8 +72,6 @@ export const useShellStore = create<ShellState>((set) => ({
       document.documentElement.classList.toggle('light', next === 'light')
       return { theme: next }
     }),
-  fieldStripVisible: true,
-  toggleFieldStrip: () => set((s) => ({ fieldStripVisible: !s.fieldStripVisible })),
   activeFieldFilter: null,
   setActiveFieldFilter: (id) => set({ activeFieldFilter: id }),
 }))
