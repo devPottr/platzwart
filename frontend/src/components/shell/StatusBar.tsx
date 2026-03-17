@@ -19,7 +19,7 @@ export function StatusBar() {
   const kw = getKW(weekStart)
 
   return (
-    <div className="h-7 bg-bg-activity border-t border-border-subtle flex items-center px-3 text-[11px] text-text-tertiary select-none" style={{ gridRow: '2', gridColumn: '1 / -1' }}>
+    <div className="hidden xl:flex h-7 bg-bg-activity border-t border-border-subtle items-center px-3 text-[11px] text-text-tertiary select-none" style={{ gridRow: '2', gridColumn: '1 / -1' }}>
       {/* Left: User + Role */}
       <div className="flex items-center gap-2">
         {user && (

@@ -12,6 +12,9 @@ interface ShellState {
   rightSidebarOpen: boolean
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
+  mobileMenuOpen: boolean
+  toggleMobileMenu: () => void
+  closeMobileOverlays: () => void
   rightPanelMode: 'none' | 'booking-detail' | 'booking-create' | 'field-detail'
   selectedBookingId: number | null
   bookingFieldId: number | null
@@ -25,8 +28,6 @@ interface ShellState {
   setWeekStart: (date: string) => void
   theme: 'dark' | 'light'
   toggleTheme: () => void
-  fieldStripVisible: boolean
-  toggleFieldStrip: () => void
   activeFieldFilter: number | null
   setActiveFieldFilter: (id: number | null) => void
 }
@@ -38,6 +39,9 @@ export const useShellStore = create<ShellState>((set) => ({
   rightSidebarOpen: false,
   toggleLeftSidebar: () => set((s) => ({ leftSidebarOpen: !s.leftSidebarOpen })),
   toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),
+  mobileMenuOpen: false,
+  toggleMobileMenu: () => set((s) => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+  closeMobileOverlays: () => set({ mobileMenuOpen: false, leftSidebarOpen: false, rightSidebarOpen: false }),
   rightPanelMode: 'none',
   selectedBookingId: null,
   bookingFieldId: null,
@@ -68,8 +72,6 @@ export const useShellStore = create<ShellState>((set) => ({
       document.documentElement.classList.toggle('light', next === 'light')
       return { theme: next }
     }),
-  fieldStripVisible: true,
-  toggleFieldStrip: () => set((s) => ({ fieldStripVisible: !s.fieldStripVisible })),
   activeFieldFilter: null,
   setActiveFieldFilter: (id) => set({ activeFieldFilter: id }),
 }))

@@ -78,7 +78,7 @@ export function TeamManagement() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-text-primary tracking-tight">Teams verwalten</h1>
         <Button onClick={openNew}>Neues Team</Button>
@@ -86,15 +86,15 @@ export function TeamManagement() {
 
       <div className="space-y-2">
         {teams.map((team) => (
-          <div key={team.id} className="flex items-center justify-between bg-bg-card border border-border-subtle rounded-lg p-4 shadow-card">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full border border-border-subtle" style={{ backgroundColor: team.color }} />
-              <div>
-                <div className="font-medium text-text-primary">{team.name}</div>
+          <div key={team.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-bg-card border border-border-subtle rounded-lg p-4 shadow-card">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-5 h-5 rounded-full border border-border-subtle flex-shrink-0" style={{ backgroundColor: team.color }} />
+              <div className="min-w-0">
+                <div className="font-medium text-text-primary truncate">{team.name}</div>
                 <div className="text-xs text-text-tertiary">{team.members.length} Mitglieder</div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button size="sm" variant="secondary" onClick={() => openEdit(team)}>Bearbeiten</Button>
               <Button size="sm" variant="danger" onClick={() => handleDelete(team.id)}>Loeschen</Button>
             </div>

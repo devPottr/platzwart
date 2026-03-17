@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useFieldStore } from '../../stores/fieldStore'
 import { getBookings } from '../../api/bookings'
 import { BookingDataContext } from '../../stores/bookingDataContext'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { Booking } from '../../types'
 
 interface AppShellProps {
@@ -20,12 +21,27 @@ export function AppShell({ children }: AppShellProps) {
   const { fields, fetchFields } = useFieldStore()
   const weekStart = useShellStore((s) => s.weekStart)
   const toggleLeftSidebar = useShellStore((s) => s.toggleLeftSidebar)
+  const leftSidebarOpen = useShellStore((s) => s.leftSidebarOpen)
+  const rightSidebarOpen = useShellStore((s) => s.rightSidebarOpen)
+  const rightPanelMode = useShellStore((s) => s.rightPanelMode)
+  const closeMobileOverlays = useShellStore((s) => s.closeMobileOverlays)
+  const closeRightPanel = useShellStore((s) => s.closeRightPanel)
+
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1279px)')
 
   const [allBookings, setAllBookings] = useState<Map<number, Booking[]>>(new Map())
 
   useEffect(() => {
     fetchFields()
   }, [fetchFields])
+
+  // Close sidebars when not on desktop (overlays should start closed)
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      closeMobileOverlays()
+    }
+  }, [isMobile, isTablet]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAllBookings = useCallback(() => {
     if (fields.length === 0) return
@@ -64,6 +80,121 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [toggleLeftSidebar])
 
+  const showRightPanel = rightPanelMode !== 'none' || rightSidebarOpen
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <BookingDataContext.Provider value={{ allBookings, fetchAllBookings }}>
+        <div className="h-screen flex flex-col overflow-hidden">
+          {/* Main content */}
+          <main className="flex-1 overflow-hidden min-h-0 bg-bg-card">
+            {children}
+          </main>
+
+          {/* Bottom nav */}
+          <ActivityBar mobile />
+
+          {/* Left sidebar drawer overlay */}
+          {leftSidebarOpen && (
+            <div className="fixed inset-0 z-40 flex">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={closeMobileOverlays}
+              />
+              <div className="relative w-[280px] max-w-[85vw] h-full animate-slide-in-left">
+                <LeftSidebar
+                  allBookings={allBookings}
+                  fields={fields}
+                  filterMyTeam={false}
+                  currentUserId={user?.id ?? null}
+                  mobile
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Right sidebar bottom-sheet overlay */}
+          {showRightPanel && (
+            <div className="fixed inset-0 z-40 flex flex-col justify-end">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={closeRightPanel}
+              />
+              <div className="relative max-h-[85vh] animate-slide-in-bottom">
+                <RightSidebar
+                  fields={fields}
+                  allBookings={allBookings}
+                  onBookingCreated={fetchAllBookings}
+                  onBookingDeleted={fetchAllBookings}
+                  mobile
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </BookingDataContext.Provider>
+    )
+  }
+
+  // Tablet layout
+  if (isTablet) {
+    return (
+      <BookingDataContext.Provider value={{ allBookings, fetchAllBookings }}>
+        <div className="h-screen flex overflow-hidden">
+          {/* Activity bar — narrow vertical */}
+          <div className="flex-shrink-0">
+            <ActivityBar />
+          </div>
+
+          {/* Main content takes full width */}
+          <main className="flex-1 overflow-hidden min-h-0 bg-bg-card">
+            {children}
+          </main>
+
+          {/* Left sidebar overlay */}
+          {leftSidebarOpen && (
+            <div className="fixed inset-0 z-40 flex">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={closeMobileOverlays}
+              />
+              <div className="relative w-[280px] h-full ml-[44px] animate-slide-in-left">
+                <LeftSidebar
+                  allBookings={allBookings}
+                  fields={fields}
+                  filterMyTeam={false}
+                  currentUserId={user?.id ?? null}
+                  mobile
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Right sidebar overlay */}
+          {showRightPanel && (
+            <div className="fixed inset-0 z-40 flex justify-end">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={closeRightPanel}
+              />
+              <div className="relative w-[300px] h-full animate-slide-in-right">
+                <RightSidebar
+                  fields={fields}
+                  allBookings={allBookings}
+                  onBookingCreated={fetchAllBookings}
+                  onBookingDeleted={fetchAllBookings}
+                  mobile
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </BookingDataContext.Provider>
+    )
+  }
+
+  // Desktop layout — original grid
   return (
     <BookingDataContext.Provider value={{ allBookings, fetchAllBookings }}>
       <div

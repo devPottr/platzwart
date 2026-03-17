@@ -63,7 +63,7 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 md:p-6 space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-text-primary mb-6">Verwaltung</h1>
       </div>
@@ -71,8 +71,8 @@ export function AdminPanel() {
       {/* Users */}
       <section>
         <h2 className="text-lg font-bold text-text-primary mb-4">Benutzer</h2>
-        <div className="bg-bg-card border border-border-subtle rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-bg-card border border-border-subtle rounded-lg overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-bg-elevated">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-text-secondary">Name</th>

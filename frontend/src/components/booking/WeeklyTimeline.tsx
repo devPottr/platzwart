@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useShellStore } from '../../stores/shellStore'
 import { addDays, formatShortDate, getKW, isWeekend, getMonday, toLocalISO } from '../../utils/date'
-import { FieldStatusStrip } from '../field/FieldStatusStrip'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { Field, Booking } from '../../types'
 
 interface WeeklyTimelineProps {
@@ -171,14 +171,22 @@ export function WeeklyTimeline({
   const weekStart = useShellStore((s) => s.weekStart)
   const setWeekStart = useShellStore((s) => s.setWeekStart)
   const setRightPanel = useShellStore((s) => s.setRightPanel)
-  const fieldStripVisible = useShellStore((s) => s.fieldStripVisible)
   const activeFieldFilter = useShellStore((s) => s.activeFieldFilter)
+
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const today = toLocalISO(new Date())
   const [search, setSearch] = useState('')
   const [filterMyTeam, setFilterMyTeam] = useState(false)
   const [now, setNow] = useState(() => new Date())
   const [hoverSlot, setHoverSlot] = useState<{ date: string; hour: number } | null>(null)
+
+  // Mobile: selected single day index (0-6)
+  const todayDayIndex = useMemo(() => {
+    const d = new Date()
+    return (d.getDay() + 6) % 7 // Mon=0 .. Sun=6
+  }, [])
+  const [selectedDay, setSelectedDay] = useState(todayDayIndex)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -189,6 +197,9 @@ export function WeeklyTimeline({
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart]
   )
+
+  // Which dates to show in the timeline
+  const visibleDates = isMobile ? [weekDates[selectedDay]] : weekDates
 
   const allFieldBookings = useMemo(() => {
     const result: FieldBooking[] = []
@@ -260,15 +271,34 @@ export function WeeklyTimeline({
   const showNowLine = todayInWeek && nowHour >= startHour && nowHour <= endHour
 
   function handlePrev() {
-    setWeekStart(addDays(weekStart, -7))
+    if (isMobile) {
+      if (selectedDay > 0) {
+        setSelectedDay(selectedDay - 1)
+      } else {
+        setWeekStart(addDays(weekStart, -7))
+        setSelectedDay(6)
+      }
+    } else {
+      setWeekStart(addDays(weekStart, -7))
+    }
   }
 
   function handleNext() {
-    setWeekStart(addDays(weekStart, 7))
+    if (isMobile) {
+      if (selectedDay < 6) {
+        setSelectedDay(selectedDay + 1)
+      } else {
+        setWeekStart(addDays(weekStart, 7))
+        setSelectedDay(0)
+      }
+    } else {
+      setWeekStart(addDays(weekStart, 7))
+    }
   }
 
   function handleToday() {
     setWeekStart(getMonday(new Date()))
+    setSelectedDay(todayDayIndex)
   }
 
   const handleDayColumnClick = useCallback(
@@ -299,14 +329,14 @@ export function WeeklyTimeline({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar — fixed height matching sidebar headers */}
-      <div className="flex flex-wrap items-center gap-3 px-4 h-[46px] flex-shrink-0 border-b border-border-subtle bg-bg-nav">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-0 md:h-[46px] flex-shrink-0 border-b border-border-subtle bg-bg-nav">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Team, Platz oder Trainer suchen..."
-          className="bg-bg-input border border-border-control rounded-lg px-3 py-1.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 w-64"
+          placeholder="Suchen..."
+          className="bg-bg-input border border-border-control rounded-lg px-3 py-1.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 w-full md:w-64"
         />
         <div className="flex items-center gap-2">
           <button
@@ -328,9 +358,15 @@ export function WeeklyTimeline({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
+            onClick={() => setRightPanel('booking-create')}
+            className="xl:hidden px-3 py-1.5 text-sm rounded-lg bg-brand text-text-on-brand hover:bg-brand-hover transition-colors font-medium"
+          >
+            + Buchung
+          </button>
+          <button
             onClick={handlePrev}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-elevated text-text-secondary hover:bg-border-control transition-colors"
-            aria-label="Vorherige Woche"
+            aria-label={isMobile ? 'Vorheriger Tag' : 'Vorherige Woche'}
           >
             &#8249;
           </button>
@@ -340,45 +376,67 @@ export function WeeklyTimeline({
           <button
             onClick={handleNext}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-elevated text-text-secondary hover:bg-border-control transition-colors"
-            aria-label="Naechste Woche"
+            aria-label={isMobile ? 'Naechster Tag' : 'Naechste Woche'}
           >
             &#8250;
           </button>
         </div>
       </div>
 
-      {/* Field Status Strip */}
-      {fieldStripVisible && fields.length > 0 && (
-        <FieldStatusStrip fields={fields} allBookings={allBookings} />
+      {/* Mobile day tabs */}
+      {isMobile && (
+        <div className="flex border-b border-border-subtle bg-bg-nav overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {weekDates.map((date, i) => (
+            <button
+              key={date}
+              onClick={() => setSelectedDay(i)}
+              className={`flex-1 min-w-[48px] px-2 py-2 text-center transition-colors ${
+                i === selectedDay
+                  ? 'border-b-2 border-brand text-brand'
+                  : date === today
+                    ? 'text-brand/70'
+                    : 'text-text-tertiary'
+              }`}
+            >
+              <div className="text-xs font-medium">{WEEKDAYS[i]}</div>
+              <div className="text-[10px]">{formatShortDate(date).slice(0, 5)}</div>
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Timeline Grid */}
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto min-h-0 bg-bg-card">
-            {/* Sticky day headers */}
-            <div className="flex border-b border-border-subtle sticky top-0 z-30 bg-bg-card">
-              <div
-                className="flex-shrink-0 px-2 py-3 text-xs font-medium text-text-tertiary uppercase tracking-wider"
-                style={{ width: TIME_COL_WIDTH }}
-              >
-                Zeit
-              </div>
-              {weekDates.map((date, i) => (
+            {/* Sticky day headers — desktop only */}
+            {!isMobile && (
+              <div className="flex border-b border-border-subtle sticky top-0 z-30 bg-bg-card">
                 <div
-                  key={date}
-                  className={`flex-1 min-w-0 px-3 py-3 text-center border-l border-border-subtle ${
-                    date === today ? 'bg-brand/5' : isWeekend(date) ? 'bg-brand/[0.04]' : ''
-                  }`}
+                  className="flex-shrink-0 px-2 py-3 text-xs font-medium text-text-tertiary uppercase tracking-wider"
+                  style={{ width: TIME_COL_WIDTH }}
                 >
-                  <div className={`text-sm font-medium tracking-tight ${date === today ? 'text-brand' : 'text-text-primary'}`}>
-                    {WEEKDAYS[i]}
-                  </div>
-                  <div className={`text-xs ${date === today ? 'text-brand/70' : 'text-text-tertiary'}`}>
-                    {formatShortDate(date)}
-                  </div>
+                  Zeit
                 </div>
-              ))}
-            </div>
+                {visibleDates.map((date, i) => {
+                  const dayIndex = isMobile ? selectedDay : i
+                  return (
+                    <div
+                      key={date}
+                      className={`flex-1 min-w-0 px-3 py-3 text-center border-l border-border-subtle ${
+                        date === today ? 'bg-brand/5' : isWeekend(date) ? 'bg-brand/[0.04]' : ''
+                      }`}
+                    >
+                      <div className={`text-sm font-medium tracking-tight ${date === today ? 'text-brand' : 'text-text-primary'}`}>
+                        {WEEKDAYS[dayIndex]}
+                      </div>
+                      <div className={`text-xs ${date === today ? 'text-brand/70' : 'text-text-tertiary'}`}>
+                        {formatShortDate(date)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Grid body */}
             <div className="flex relative" style={{ height: totalGridHeight }}>
@@ -396,7 +454,7 @@ export function WeeklyTimeline({
               </div>
 
               {/* Day columns */}
-              {weekDates.map((date) => {
+              {visibleDates.map((date) => {
                 const dayBookings = lanedBookingsByDate.get(date) ?? []
                 const isTodayCol = date === today
                 const isHoveringThisCol = hoverSlot?.date === date

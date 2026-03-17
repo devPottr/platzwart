@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { useShellStore } from '../../stores/shellStore'
@@ -68,6 +69,26 @@ function MoonIcon() {
   )
 }
 
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  )
+}
+
+function MoreIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  )
+}
+
 interface NavItem {
   to: string
   icon: React.ReactNode
@@ -88,7 +109,11 @@ function SidebarIcon({ open }: { open: boolean }) {
   )
 }
 
-export function ActivityBar() {
+interface ActivityBarProps {
+  mobile?: boolean
+}
+
+export function ActivityBar({ mobile }: ActivityBarProps) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const location = useLocation()
@@ -96,6 +121,8 @@ export function ActivityBar() {
   const toggleTheme = useShellStore((s) => s.toggleTheme)
   const leftSidebarOpen = useShellStore((s) => s.leftSidebarOpen)
   const toggleLeftSidebar = useShellStore((s) => s.toggleLeftSidebar)
+
+  const [moreOpen, setMoreOpen] = useState(false)
 
   const navItems: NavItem[] = [
     { to: '/', icon: <CalendarIcon />, label: 'Kalender' },
@@ -117,6 +144,84 @@ export function ActivityBar() {
     return location.pathname.startsWith(to)
   }
 
+  // Mobile bottom nav
+  if (mobile) {
+    return (
+      <>
+        <div className="flex-shrink-0 h-14 bg-bg-activity border-t border-border-subtle flex items-center justify-around px-2 z-50">
+          {/* Hamburger — opens left sidebar */}
+          <button
+            onClick={toggleLeftSidebar}
+            className="flex flex-col items-center justify-center w-12 h-12 text-text-muted"
+          >
+            <MenuIcon />
+            <span className="text-[9px] mt-0.5">Menu</span>
+          </button>
+
+          {/* Nav items */}
+          {navItems.map((item) => {
+            const active = isActive(item.to)
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center justify-center w-12 h-12 ${
+                  active ? 'text-brand' : 'text-text-muted'
+                }`}
+              >
+                {item.icon}
+                <span className="text-[9px] mt-0.5">{item.label}</span>
+              </Link>
+            )
+          })}
+
+          {/* More menu */}
+          <button
+            onClick={() => setMoreOpen(!moreOpen)}
+            className="flex flex-col items-center justify-center w-12 h-12 text-text-muted"
+          >
+            <MoreIcon />
+            <span className="text-[9px] mt-0.5">Mehr</span>
+          </button>
+        </div>
+
+        {/* More popup */}
+        {moreOpen && (
+          <div className="fixed inset-0 z-[60]" onClick={() => setMoreOpen(false)}>
+            <div
+              className="absolute bottom-16 right-2 bg-bg-elevated border border-border-subtle rounded-lg shadow-xl p-2 min-w-[160px]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => { toggleTheme(); setMoreOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-text-secondary hover:bg-bg-card rounded-md"
+              >
+                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </button>
+              <div className="flex items-center gap-3 px-3 py-2 text-sm text-text-tertiary">
+                <div
+                  className="w-5 h-5 rounded-full bg-brand flex items-center justify-center text-[9px] font-bold text-text-on-brand"
+                >
+                  {initials}
+                </div>
+                {user?.displayName}
+              </div>
+              <button
+                onClick={() => { logout(); setMoreOpen(false) }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-danger hover:bg-bg-card rounded-md"
+              >
+                <LogOutIcon />
+                Abmelden
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  // Desktop vertical bar
   return (
     <div className="w-[44px] h-full bg-bg-activity flex flex-col items-center pt-2 pb-9 border-r border-border-subtle">
       {/* Logo */}
