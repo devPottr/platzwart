@@ -145,7 +145,7 @@ export function BookingPanel({ field: initialField, fields, bookings: initialBoo
         </div>
       )}
 
-      <div className={compact ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-8'}>
+      <div className={compact ? 'space-y-3' : 'grid grid-cols-1 lg:grid-cols-2 gap-8'}>
         {/* Left column — Zone selection */}
         <div>
           {/* Field selector (when no field pre-selected) */}
@@ -176,6 +176,7 @@ export function BookingPanel({ field: initialField, fields, bookings: initialBoo
                 selectedTime={selectedTime}
                 selectedSections={selectedSections}
                 onToggleSection={handleToggleSection}
+                compact={compact}
               />
               {/* Legend */}
               <div className="flex gap-4 mt-3 text-xs text-text-tertiary">
@@ -336,14 +337,25 @@ export function BookingPanel({ field: initialField, fields, bookings: initialBoo
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={onClose}>Abbrechen</Button>
-            <Button onClick={handleSubmit} disabled={submitting || !isValid}>
-              {submitting ? 'Speichern...' : 'Buchung speichern'}
-            </Button>
-          </div>
+          {!compact && (
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="secondary" onClick={onClose}>Abbrechen</Button>
+              <Button onClick={handleSubmit} disabled={submitting || !isValid}>
+                {submitting ? 'Speichern...' : 'Buchung speichern'}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
+      {compact && (
+        <div className="sticky bottom-0 bg-bg-nav border-t border-border-subtle pt-3 mt-4 flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>Abbrechen</Button>
+          <Button onClick={handleSubmit} disabled={submitting || !isValid}>
+            {submitting ? 'Speichern...' : 'Buchung speichern'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
