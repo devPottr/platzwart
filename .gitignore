@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Node
+node_modules/
+frontend/dist/
+
+# Built UI
+backend/src/Platzwart/wwwroot/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
