@@ -69,6 +69,18 @@ export function getMonthDays(year: number, month: number): { date: string; inMon
 
 const DAY_NAMES = ['SONNTAG', 'MONTAG', 'DIENSTAG', 'MITTWOCH', 'DONNERSTAG', 'FREITAG', 'SAMSTAG']
 
+const MONTHS_DE = [
+  'Januar', 'Februar', 'Maerz', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+]
+
+export function formatFullDateDE(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  const dayName = DAY_NAMES[d.getDay()]
+  const capitalized = dayName.charAt(0) + dayName.slice(1).toLowerCase()
+  return `${capitalized} – ${d.getDate()}. ${MONTHS_DE[d.getMonth()]} ${d.getFullYear()}`
+}
+
 export function getDayLabel(dateStr: string, today: string): string {
   const tomorrow = addDays(today, 1)
   if (dateStr === today) return 'HEUTE'
