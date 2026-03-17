@@ -5,11 +5,12 @@ interface FieldSectionProps {
   booking: Booking | null
   isSelected: boolean
   isBooked: boolean
+  compact?: boolean
   onClick: () => void
 }
 
-export function FieldSection({ section, booking, isSelected, isBooked, onClick }: FieldSectionProps) {
-  const baseClasses = 'rounded-lg p-3 min-h-[80px] flex flex-col items-center justify-center text-sm font-medium transition-all cursor-pointer border-2'
+export function FieldSection({ section, booking, isSelected, isBooked, compact = false, onClick }: FieldSectionProps) {
+  const baseClasses = `rounded-lg flex flex-col items-center justify-center font-medium transition-all cursor-pointer border-2 ${compact ? 'p-1.5 min-h-[44px] text-xs' : 'p-3 min-h-[80px] text-sm'}`
 
   let colorClasses: string
   if (isBooked && booking) {
@@ -34,7 +35,7 @@ export function FieldSection({ section, booking, isSelected, isBooked, onClick }
       ) : (
         <>
           <span className="text-xs">{section.label ?? `${section.colIndex + 1}/${section.rowIndex + 1}`}</span>
-          {isSelected && <span className="text-xs text-brand mt-1">Gewaehlt</span>}
+          {isSelected && !compact && <span className="text-xs text-brand mt-1">Gewaehlt</span>}
         </>
       )}
     </div>

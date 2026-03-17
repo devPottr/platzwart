@@ -7,9 +7,10 @@ interface FieldGridProps {
   selectedTime: { start: string; end: string } | null
   selectedSections: number[]
   onToggleSection: (sectionId: number) => void
+  compact?: boolean
 }
 
-export function FieldGrid({ field, bookings, selectedTime, selectedSections, onToggleSection }: FieldGridProps) {
+export function FieldGrid({ field, bookings, selectedTime, selectedSections, onToggleSection, compact = false }: FieldGridProps) {
   const bookedSections = new Map<number, Booking>()
   if (selectedTime) {
     const selStart = new Date(selectedTime.start).getTime()
@@ -27,7 +28,7 @@ export function FieldGrid({ field, bookings, selectedTime, selectedSections, onT
 
   return (
     <div
-      className="grid gap-2 p-4 bg-bg-field rounded-xl border-2 border-border-field"
+      className={`grid bg-bg-field rounded-xl border-2 border-border-field ${compact ? 'gap-1 p-2' : 'gap-2 p-4'}`}
       style={{
         gridTemplateColumns: `repeat(${field.gridCols}, 1fr)`,
         gridTemplateRows: `repeat(${field.gridRows}, 1fr)`,
@@ -46,6 +47,7 @@ export function FieldGrid({ field, bookings, selectedTime, selectedSections, onT
               booking={booking ?? null}
               isSelected={isSelected}
               isBooked={isBooked}
+              compact={compact}
               onClick={() => !isBooked && onToggleSection(section.id)}
             />
           )
