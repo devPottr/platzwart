@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<UserService>();
+
 var app = builder.Build();
 
 // Apply migrations on startup
@@ -39,5 +41,6 @@ app.UseMiddleware<SessionMiddleware>();
 
 // Map API endpoints
 app.MapAuthEndpoints();
+app.MapUserEndpoints();
 
 app.Run();
