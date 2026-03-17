@@ -4,6 +4,7 @@ import { useAuthStore } from './stores/authStore'
 import { Layout } from './components/layout/Layout'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
+import { PlannerPage } from './pages/PlannerPage'
 import { TeamManagement } from './pages/TeamManagement'
 import { AdminPanel } from './pages/AdminPanel'
 import { hasMinRole } from './types'
@@ -36,6 +37,9 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/plaetze" element={<Navigate to="/" />} />
+                  <Route path="/planer" element={
+                    hasMinRole(user, 'trainer') ? <PlannerPage /> : <Navigate to="/" />
+                  } />
                   <Route path="/teams" element={
                     hasMinRole(user, 'platzwart') ? <TeamManagement /> : <Navigate to="/" />
                   } />

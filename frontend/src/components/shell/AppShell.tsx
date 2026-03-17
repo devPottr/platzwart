@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ActivityBar } from './ActivityBar'
 import { StatusBar } from './StatusBar'
 import { LeftSidebar } from './LeftSidebar'
@@ -17,6 +18,8 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const location = useLocation()
+  const isFullpage = location.pathname === '/planer'
   const user = useAuthStore((s) => s.user)
   const { fields, fetchFields } = useFieldStore()
   const weekStart = useShellStore((s) => s.weekStart)
@@ -189,6 +192,30 @@ export function AppShell({ children }: AppShellProps) {
               </div>
             </div>
           )}
+        </div>
+      </BookingDataContext.Provider>
+    )
+  }
+
+  // Fullpage layout (Planner) — ActivityBar + content only
+  if (isFullpage) {
+    return (
+      <BookingDataContext.Provider value={{ allBookings, fetchAllBookings }}>
+        <div
+          className="h-screen overflow-hidden"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '44px 1fr',
+            gridTemplateRows: 'minmax(0, 1fr) 28px',
+          }}
+        >
+          <div style={{ gridRow: '1 / 3', gridColumn: '1' }}>
+            <ActivityBar />
+          </div>
+          <main className="overflow-hidden min-h-0 bg-bg-card" style={{ gridRow: '1', gridColumn: '2' }}>
+            {children}
+          </main>
+          <StatusBar />
         </div>
       </BookingDataContext.Provider>
     )

@@ -14,14 +14,14 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...options, headers, credentials: 'same-origin' })
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Unbekannter Fehler' }))
-    throw new ApiError(res.status, body.error ?? 'Unbekannter Fehler')
+    throw new ApiError(res.status, body.error ?? 'Unbekannter Fehler', body)
   }
   if (res.status === 204) return undefined as T
   return res.json()
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public body?: Record<string, unknown>) {
     super(message)
     this.name = 'ApiError'
   }
