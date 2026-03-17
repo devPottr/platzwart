@@ -2,7 +2,10 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useShellStore } from '../../stores/shellStore'
 import { addDays, formatShortDate, getKW, isWeekend, getMonday, toLocalISO } from '../../utils/date'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { useTimelineData, getHourFraction } from '../../hooks/useTimelineData'
+import { MobileCalendarView } from '../calendar/MobileCalendarView'
 import type { Field, Booking } from '../../types'
+import type { FieldBooking } from '../../hooks/useTimelineData'
 
 interface WeeklyTimelineProps {
   fields: Field[]
@@ -11,117 +14,18 @@ interface WeeklyTimelineProps {
   currentUserId: number | null
 }
 
-interface FieldBooking extends Booking {
-  fieldId: number
-  fieldSectionCount: number
-}
-
-interface LanedBooking extends FieldBooking {
-  lane: number
-  totalLanes: number
-}
-
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 const HOUR_HEIGHT = 60
 const TIME_COL_WIDTH = 50
-const DEFAULT_START = 15
-const DEFAULT_END = 21
 
 function formatTime(iso: string): string {
   return iso.slice(11, 16)
-}
-
-function getHourFraction(iso: string): number {
-  const h = parseInt(iso.slice(11, 13), 10)
-  const m = parseInt(iso.slice(14, 16), 10)
-  return h + m / 60
 }
 
 function formatHour(h: number): string {
   const hours = Math.floor(h)
   const mins = Math.round((h - hours) * 60)
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`
-}
-
-function computeTimeRange(bookings: FieldBooking[], weekDates: string[]): [number, number] {
-  let min = DEFAULT_START
-  let max = DEFAULT_END
-  const weekSet = new Set(weekDates)
-  for (const b of bookings) {
-    const day = b.startTime.slice(0, 10)
-    if (!weekSet.has(day)) continue
-    const s = getHourFraction(b.startTime)
-    const e = getHourFraction(b.endTime)
-    if (s < min) min = s
-    if (e > max) max = e
-  }
-  return [Math.floor(min) - 1, Math.ceil(max) + 1]
-}
-
-function assignLanes(dayBookings: FieldBooking[]): LanedBooking[] {
-  if (dayBookings.length === 0) return []
-
-  const sorted = [...dayBookings].sort((a, b) => a.startTime.localeCompare(b.startTime))
-
-  const laneEnds: number[] = []
-  const assignments: { booking: FieldBooking; lane: number }[] = []
-
-  for (const b of sorted) {
-    const start = getHourFraction(b.startTime)
-    const end = getHourFraction(b.endTime)
-    let assignedLane = -1
-    for (let i = 0; i < laneEnds.length; i++) {
-      if (laneEnds[i] <= start) {
-        assignedLane = i
-        break
-      }
-    }
-    if (assignedLane === -1) {
-      assignedLane = laneEnds.length
-      laneEnds.push(end)
-    } else {
-      laneEnds[assignedLane] = end
-    }
-    assignments.push({ booking: b, lane: assignedLane })
-  }
-
-  const n = assignments.length
-  const groupId = new Array<number>(n)
-  for (let i = 0; i < n; i++) groupId[i] = i
-
-  function find(x: number): number {
-    while (groupId[x] !== x) {
-      groupId[x] = groupId[groupId[x]]
-      x = groupId[x]
-    }
-    return x
-  }
-  function union(a: number, b: number) {
-    const ra = find(a), rb = find(b)
-    if (ra !== rb) groupId[ra] = rb
-  }
-
-  for (let i = 0; i < n; i++) {
-    const endI = getHourFraction(assignments[i].booking.endTime)
-    for (let j = i + 1; j < n; j++) {
-      const startJ = getHourFraction(assignments[j].booking.startTime)
-      if (startJ >= endI) break
-      union(i, j)
-    }
-  }
-
-  const groupMaxLane = new Map<number, number>()
-  for (let i = 0; i < n; i++) {
-    const g = find(i)
-    const current = groupMaxLane.get(g) ?? 0
-    groupMaxLane.set(g, Math.max(current, assignments[i].lane + 1))
-  }
-
-  return assignments.map((a, i) => ({
-    ...a.booking,
-    lane: a.lane,
-    totalLanes: groupMaxLane.get(find(i)) ?? 1,
-  }))
 }
 
 function shortFieldName(name: string): string {
@@ -168,25 +72,45 @@ export function WeeklyTimeline({
   onBookingClick,
   currentUserId,
 }: WeeklyTimelineProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+
+  if (isMobile) {
+    return (
+      <MobileCalendarView
+        fields={fields}
+        allBookings={allBookings}
+        onBookingClick={onBookingClick}
+        currentUserId={currentUserId}
+      />
+    )
+  }
+
+  return (
+    <DesktopTimeline
+      fields={fields}
+      allBookings={allBookings}
+      onBookingClick={onBookingClick}
+      currentUserId={currentUserId}
+    />
+  )
+}
+
+function DesktopTimeline({
+  fields,
+  allBookings,
+  onBookingClick,
+  currentUserId,
+}: WeeklyTimelineProps) {
   const weekStart = useShellStore((s) => s.weekStart)
   const setWeekStart = useShellStore((s) => s.setWeekStart)
   const setRightPanel = useShellStore((s) => s.setRightPanel)
   const activeFieldFilter = useShellStore((s) => s.activeFieldFilter)
-
-  const isMobile = useMediaQuery('(max-width: 767px)')
 
   const today = toLocalISO(new Date())
   const [search, setSearch] = useState('')
   const [filterMyTeam, setFilterMyTeam] = useState(false)
   const [now, setNow] = useState(() => new Date())
   const [hoverSlot, setHoverSlot] = useState<{ date: string; hour: number } | null>(null)
-
-  // Mobile: selected single day index (0-6)
-  const todayDayIndex = useMemo(() => {
-    const d = new Date()
-    return (d.getDay() + 6) % 7 // Mon=0 .. Sun=6
-  }, [])
-  const [selectedDay, setSelectedDay] = useState(todayDayIndex)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
@@ -198,72 +122,15 @@ export function WeeklyTimeline({
     [weekStart]
   )
 
-  // Which dates to show in the timeline
-  const visibleDates = isMobile ? [weekDates[selectedDay]] : weekDates
+  const { lanedBookingsByDate, startHour, endHour, hourLabels } = useTimelineData(
+    fields, allBookings, activeFieldFilter, weekDates, search
+  )
 
-  const allFieldBookings = useMemo(() => {
-    const result: FieldBooking[] = []
-    for (const [fieldId, bookings] of allBookings) {
-      if (activeFieldFilter !== null && fieldId !== activeFieldFilter) continue
-      const field = fields.find((f) => f.id === fieldId)
-      const sectionCount = field?.sections.length ?? 0
-      for (const b of bookings) {
-        result.push({ ...b, fieldId, fieldSectionCount: sectionCount })
-      }
-    }
-    return result
-  }, [allBookings, fields, activeFieldFilter])
-
-  const matchesSearch = useMemo(() => {
-    if (!search.trim()) return null
-    const q = search.toLowerCase()
-    return (b: FieldBooking): boolean => {
-      const fieldName = fields.find((f) => f.id === b.fieldId)?.name ?? ''
-      return (
-        (b.teamName?.toLowerCase().includes(q) ?? false) ||
-        fieldName.toLowerCase().includes(q) ||
-        (b.bookedByName?.toLowerCase().includes(q) ?? false)
-      )
-    }
-  }, [search, fields])
+  const totalGridHeight = (endHour - startHour) * HOUR_HEIGHT
 
   function isMyBooking(b: FieldBooking): boolean {
     return currentUserId != null && b.bookedById === currentUserId
   }
-
-  const timeRange = useMemo(
-    () => computeTimeRange(allFieldBookings, weekDates),
-    [allFieldBookings, weekDates]
-  )
-  const [startHour, endHour] = timeRange
-  const totalGridHeight = (endHour - startHour) * HOUR_HEIGHT
-
-  const hourLabels = useMemo(() => {
-    const labels: number[] = []
-    for (let h = startHour; h <= endHour; h++) labels.push(h)
-    return labels
-  }, [startHour, endHour])
-
-  const lanedBookingsByDate = useMemo(() => {
-    const map = new Map<string, LanedBooking[]>()
-    const weekSet = new Set(weekDates)
-
-    const byDate = new Map<string, FieldBooking[]>()
-    for (const b of allFieldBookings) {
-      const day = b.startTime.slice(0, 10)
-      if (!weekSet.has(day)) continue
-      if (matchesSearch && !matchesSearch(b)) continue
-      const arr = byDate.get(day)
-      if (arr) arr.push(b)
-      else byDate.set(day, [b])
-    }
-
-    for (const [date, bookings] of byDate) {
-      map.set(date, assignLanes(bookings))
-    }
-
-    return map
-  }, [allFieldBookings, weekDates, matchesSearch])
 
   const todayInWeek = weekDates.includes(today)
   const nowHour = now.getHours() + now.getMinutes() / 60
@@ -271,34 +138,15 @@ export function WeeklyTimeline({
   const showNowLine = todayInWeek && nowHour >= startHour && nowHour <= endHour
 
   function handlePrev() {
-    if (isMobile) {
-      if (selectedDay > 0) {
-        setSelectedDay(selectedDay - 1)
-      } else {
-        setWeekStart(addDays(weekStart, -7))
-        setSelectedDay(6)
-      }
-    } else {
-      setWeekStart(addDays(weekStart, -7))
-    }
+    setWeekStart(addDays(weekStart, -7))
   }
 
   function handleNext() {
-    if (isMobile) {
-      if (selectedDay < 6) {
-        setSelectedDay(selectedDay + 1)
-      } else {
-        setWeekStart(addDays(weekStart, 7))
-        setSelectedDay(0)
-      }
-    } else {
-      setWeekStart(addDays(weekStart, 7))
-    }
+    setWeekStart(addDays(weekStart, 7))
   }
 
   function handleToday() {
     setWeekStart(getMonday(new Date()))
-    setSelectedDay(todayDayIndex)
   }
 
   const handleDayColumnClick = useCallback(
@@ -330,13 +178,13 @@ export function WeeklyTimeline({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-0 md:h-[46px] flex-shrink-0 border-b border-border-subtle bg-bg-nav">
+      <div className="flex flex-wrap items-center gap-3 px-4 md:py-0 md:h-[46px] flex-shrink-0 border-b border-border-subtle bg-bg-nav">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Suchen..."
-          className="bg-bg-input border border-border-control rounded-lg px-3 py-1.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 w-full md:w-64"
+          className="bg-bg-input border border-border-control rounded-lg px-3 py-1.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 w-64"
         />
         <div className="flex items-center gap-2">
           <button
@@ -366,7 +214,7 @@ export function WeeklyTimeline({
           <button
             onClick={handlePrev}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-elevated text-text-secondary hover:bg-border-control transition-colors"
-            aria-label={isMobile ? 'Vorheriger Tag' : 'Vorherige Woche'}
+            aria-label="Vorherige Woche"
           >
             &#8249;
           </button>
@@ -376,67 +224,40 @@ export function WeeklyTimeline({
           <button
             onClick={handleNext}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-elevated text-text-secondary hover:bg-border-control transition-colors"
-            aria-label={isMobile ? 'Naechster Tag' : 'Naechste Woche'}
+            aria-label="Naechste Woche"
           >
             &#8250;
           </button>
         </div>
       </div>
 
-      {/* Mobile day tabs */}
-      {isMobile && (
-        <div className="flex border-b border-border-subtle bg-bg-nav overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {weekDates.map((date, i) => (
-            <button
-              key={date}
-              onClick={() => setSelectedDay(i)}
-              className={`flex-1 min-w-[48px] px-2 py-2 text-center transition-colors ${
-                i === selectedDay
-                  ? 'border-b-2 border-brand text-brand'
-                  : date === today
-                    ? 'text-brand/70'
-                    : 'text-text-tertiary'
-              }`}
-            >
-              <div className="text-xs font-medium">{WEEKDAYS[i]}</div>
-              <div className="text-[10px]">{formatShortDate(date).slice(0, 5)}</div>
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Timeline Grid */}
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto min-h-0 bg-bg-card">
-            {/* Sticky day headers — desktop only */}
-            {!isMobile && (
-              <div className="flex border-b border-border-subtle sticky top-0 z-30 bg-bg-card">
-                <div
-                  className="flex-shrink-0 px-2 py-3 text-xs font-medium text-text-tertiary uppercase tracking-wider"
-                  style={{ width: TIME_COL_WIDTH }}
-                >
-                  Zeit
-                </div>
-                {visibleDates.map((date, i) => {
-                  const dayIndex = isMobile ? selectedDay : i
-                  return (
-                    <div
-                      key={date}
-                      className={`flex-1 min-w-0 px-3 py-3 text-center border-l border-border-subtle ${
-                        date === today ? 'bg-brand/5' : isWeekend(date) ? 'bg-brand/[0.04]' : ''
-                      }`}
-                    >
-                      <div className={`text-sm font-medium tracking-tight ${date === today ? 'text-brand' : 'text-text-primary'}`}>
-                        {WEEKDAYS[dayIndex]}
-                      </div>
-                      <div className={`text-xs ${date === today ? 'text-brand/70' : 'text-text-tertiary'}`}>
-                        {formatShortDate(date)}
-                      </div>
-                    </div>
-                  )
-                })}
+            {/* Sticky day headers */}
+            <div className="flex border-b border-border-subtle sticky top-0 z-30 bg-bg-card">
+              <div
+                className="flex-shrink-0 px-2 py-3 text-xs font-medium text-text-tertiary uppercase tracking-wider"
+                style={{ width: TIME_COL_WIDTH }}
+              >
+                Zeit
               </div>
-            )}
+              {weekDates.map((date, i) => (
+                <div
+                  key={date}
+                  className={`flex-1 min-w-0 px-3 py-3 text-center border-l border-border-subtle ${
+                    date === today ? 'bg-brand/5' : isWeekend(date) ? 'bg-brand/[0.04]' : ''
+                  }`}
+                >
+                  <div className={`text-sm font-medium tracking-tight ${date === today ? 'text-brand' : 'text-text-primary'}`}>
+                    {WEEKDAYS[i]}
+                  </div>
+                  <div className={`text-xs ${date === today ? 'text-brand/70' : 'text-text-tertiary'}`}>
+                    {formatShortDate(date)}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Grid body */}
             <div className="flex relative" style={{ height: totalGridHeight }}>
@@ -454,7 +275,7 @@ export function WeeklyTimeline({
               </div>
 
               {/* Day columns */}
-              {visibleDates.map((date) => {
+              {weekDates.map((date) => {
                 const dayBookings = lanedBookingsByDate.get(date) ?? []
                 const isTodayCol = date === today
                 const isHoveringThisCol = hoverSlot?.date === date

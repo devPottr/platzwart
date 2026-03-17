@@ -122,6 +122,7 @@ export function ActivityBar({ mobile }: ActivityBarProps) {
   const leftSidebarOpen = useShellStore((s) => s.leftSidebarOpen)
   const toggleLeftSidebar = useShellStore((s) => s.toggleLeftSidebar)
 
+  const goToToday = useShellStore((s) => s.goToToday)
   const [moreOpen, setMoreOpen] = useState(false)
 
   const navItems: NavItem[] = [
@@ -165,6 +166,12 @@ export function ActivityBar({ mobile }: ActivityBarProps) {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={(e) => {
+                  if (active && item.to === '/') {
+                    e.preventDefault()
+                    goToToday()
+                  }
+                }}
                 className={`flex flex-col items-center justify-center w-12 h-12 ${
                   active ? 'text-brand' : 'text-text-muted'
                 }`}

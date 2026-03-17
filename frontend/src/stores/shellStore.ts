@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getMonday } from '../utils/date'
+import { getMonday, toLocalISO, getWeekStartForDate } from '../utils/date'
 
 interface BookingPrefill {
   date: string
@@ -24,6 +24,9 @@ interface ShellState {
     payload?: { bookingId?: number; fieldId?: number; prefill?: BookingPrefill }
   ) => void
   closeRightPanel: () => void
+  selectedDate: string
+  setSelectedDate: (date: string) => void
+  goToToday: () => void
   weekStart: string
   setWeekStart: (date: string) => void
   theme: 'dark' | 'light'
@@ -62,6 +65,12 @@ export const useShellStore = create<ShellState>((set) => ({
       bookingFieldId: null,
       bookingPrefill: null,
     }),
+  selectedDate: toLocalISO(new Date()),
+  setSelectedDate: (date) => set({ selectedDate: date, weekStart: getWeekStartForDate(date) }),
+  goToToday: () => {
+    const today = toLocalISO(new Date())
+    set({ selectedDate: today, weekStart: getWeekStartForDate(today) })
+  },
   weekStart: getMonday(new Date()),
   setWeekStart: (date) => set({ weekStart: date }),
   theme: savedTheme ?? 'dark',
