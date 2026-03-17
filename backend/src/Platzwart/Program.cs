@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platzwart.Auth;
+using Platzwart.Bookings;
 using Platzwart.Data;
 using Platzwart.Fields;
 using Platzwart.Middleware;
@@ -14,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TeamService>();
 builder.Services.AddScoped<FieldService>();
+builder.Services.AddScoped<BookingService>();
 
 var app = builder.Build();
 
@@ -43,10 +45,18 @@ app.UseMiddleware<RateLimitMiddleware>();
 app.UseMiddleware<CsrfMiddleware>();
 app.UseMiddleware<SessionMiddleware>();
 
+// Serve static files (built React app)
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 // Map API endpoints
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapTeamEndpoints();
 app.MapFieldEndpoints();
+app.MapBookingEndpoints();
+
+// SPA fallback - serve index.html for non-API routes
+app.MapFallbackToFile("index.html");
 
 app.Run();
