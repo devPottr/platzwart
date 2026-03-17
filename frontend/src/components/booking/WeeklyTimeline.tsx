@@ -360,6 +360,12 @@ export function WeeklyTimeline({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
+            onClick={() => setRightPanel('booking-create')}
+            className="xl:hidden px-3 py-1.5 text-sm rounded-lg bg-brand text-text-on-brand hover:bg-brand-hover transition-colors font-medium"
+          >
+            + Buchung
+          </button>
+          <button
             onClick={handlePrev}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-elevated text-text-secondary hover:bg-border-control transition-colors"
             aria-label={isMobile ? 'Vorheriger Tag' : 'Vorherige Woche'}
