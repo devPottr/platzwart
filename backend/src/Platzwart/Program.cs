@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platzwart.Auth;
 using Platzwart.Data;
 using Platzwart.Middleware;
+using Platzwart.Teams;
 using Platzwart.Users;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<TeamService>();
 
 var app = builder.Build();
 
@@ -42,5 +44,6 @@ app.UseMiddleware<SessionMiddleware>();
 // Map API endpoints
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
+app.MapTeamEndpoints();
 
 app.Run();
