@@ -1,7 +1,21 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useAuthStore } from './stores/authStore'
+import { Login } from './pages/Login'
+
 export default function App() {
+  const checkAuth = useAuthStore((s) => s.checkAuth)
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-brand">Platzwart</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/*" element={<div className="min-h-screen bg-bg-base text-text-primary flex items-center justify-center">Laden...</div>} />
+      </Routes>
+    </BrowserRouter>
   )
 }
