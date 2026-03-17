@@ -86,11 +86,11 @@ export function TeamManagement() {
 
       <div className="space-y-2">
         {teams.map((team) => (
-          <div key={team.id} className="flex items-center justify-between bg-bg-card border border-border-subtle rounded-lg p-4 shadow-card">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full border border-border-subtle" style={{ backgroundColor: team.color }} />
-              <div>
-                <div className="font-medium text-text-primary">{team.name}</div>
+          <div key={team.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-bg-card border border-border-subtle rounded-lg p-4 shadow-card">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-5 h-5 rounded-full border border-border-subtle flex-shrink-0" style={{ backgroundColor: team.color }} />
+              <div className="min-w-0">
+                <div className="font-medium text-text-primary truncate">{team.name}</div>
                 <div className="text-xs text-text-tertiary">{team.members.length} Mitglieder</div>
               </div>
             </div>

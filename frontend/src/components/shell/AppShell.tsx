@@ -35,12 +35,12 @@ export function AppShell({ children }: AppShellProps) {
     fetchFields()
   }, [fetchFields])
 
-  // Close sidebars when switching to mobile
+  // Close sidebars when not on desktop (overlays should start closed)
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile || isTablet) {
       closeMobileOverlays()
     }
-  }, [isMobile]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMobile, isTablet]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAllBookings = useCallback(() => {
     if (fields.length === 0) return
