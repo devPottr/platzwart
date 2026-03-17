@@ -12,6 +12,9 @@ interface ShellState {
   rightSidebarOpen: boolean
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
+  mobileMenuOpen: boolean
+  toggleMobileMenu: () => void
+  closeMobileOverlays: () => void
   rightPanelMode: 'none' | 'booking-detail' | 'booking-create' | 'field-detail'
   selectedBookingId: number | null
   bookingFieldId: number | null
@@ -38,6 +41,9 @@ export const useShellStore = create<ShellState>((set) => ({
   rightSidebarOpen: false,
   toggleLeftSidebar: () => set((s) => ({ leftSidebarOpen: !s.leftSidebarOpen })),
   toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),
+  mobileMenuOpen: false,
+  toggleMobileMenu: () => set((s) => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+  closeMobileOverlays: () => set({ mobileMenuOpen: false, leftSidebarOpen: false, rightSidebarOpen: false }),
   rightPanelMode: 'none',
   selectedBookingId: null,
   bookingFieldId: null,
