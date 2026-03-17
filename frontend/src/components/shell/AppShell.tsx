@@ -25,6 +25,7 @@ export function AppShell({ children }: AppShellProps) {
   const rightSidebarOpen = useShellStore((s) => s.rightSidebarOpen)
   const rightPanelMode = useShellStore((s) => s.rightPanelMode)
   const closeMobileOverlays = useShellStore((s) => s.closeMobileOverlays)
+  const closeRightPanel = useShellStore((s) => s.closeRightPanel)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1279px)')
@@ -118,7 +119,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="fixed inset-0 z-40 flex flex-col justify-end">
               <div
                 className="absolute inset-0 bg-black/50"
-                onClick={closeMobileOverlays}
+                onClick={closeRightPanel}
               />
               <div className="relative max-h-[85vh] animate-slide-in-bottom">
                 <RightSidebar
@@ -175,7 +176,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="fixed inset-0 z-40 flex justify-end">
               <div
                 className="absolute inset-0 bg-black/50"
-                onClick={closeMobileOverlays}
+                onClick={closeRightPanel}
               />
               <div className="relative w-[300px] h-full animate-slide-in-right">
                 <RightSidebar

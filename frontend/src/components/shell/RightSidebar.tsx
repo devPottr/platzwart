@@ -31,7 +31,6 @@ export function RightSidebar({ fields, allBookings, onBookingCreated, onBookingD
   const bookingFieldId = useShellStore((s) => s.bookingFieldId)
   const setRightPanel = useShellStore((s) => s.setRightPanel)
   const closeRightPanel = useShellStore((s) => s.closeRightPanel)
-  const closeMobileOverlays = useShellStore((s) => s.closeMobileOverlays)
 
   const bookingField = bookingFieldId != null ? fields.find((f) => f.id === bookingFieldId) : undefined
 
@@ -59,7 +58,7 @@ export function RightSidebar({ fields, allBookings, onBookingCreated, onBookingD
         )}
         {mobile && (
           <button
-            onClick={closeMobileOverlays}
+            onClick={closeRightPanel}
             className="w-8 h-8 flex items-center justify-center rounded text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated transition-colors"
           >
             <CloseIcon />
