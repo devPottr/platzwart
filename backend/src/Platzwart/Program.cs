@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platzwart.Auth;
 using Platzwart.Data;
+using Platzwart.Fields;
 using Platzwart.Middleware;
 using Platzwart.Teams;
 using Platzwart.Users;
@@ -12,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TeamService>();
+builder.Services.AddScoped<FieldService>();
 
 var app = builder.Build();
 
@@ -45,5 +47,6 @@ app.UseMiddleware<SessionMiddleware>();
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapTeamEndpoints();
+app.MapFieldEndpoints();
 
 app.Run();
